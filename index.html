@@ -1,179 +1,236 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Deutsch Arabisch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deutsch Arabisch DE</title>
 <style>
+:root{--navy:#173768;--blue:#1684d8;--pale:#f3f6fb;--ink:#243047;--green:#17845b;--red:#b42318}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f1f5fb;color:#243047}
-header{background:#173b68;color:white;text-align:center;padding:25px 12px}
-header h1{margin:0 0 10px}
-main{max-width:700px;margin:20px auto;padding:0 12px}
-.card{background:white;border-radius:15px;padding:18px;margin-bottom:16px;box-shadow:0 3px 12px #0001}
-h2{font-size:20px;margin-top:0}
-input,button{width:100%;padding:12px;margin-top:9px;border-radius:9px;font-size:16px}
-input{border:1px solid #ccd5e2}
-button{border:0;background:#1767ad;color:white;cursor:pointer}
-.secondary{background:#e7eef8;color:#173b68}
-.word{font-size:26px;color:#1767ad;font-weight:bold}
-.example{padding:11px 0;border-bottom:1px solid #eee;line-height:1.7}
-.de{direction:ltr;text-align:left;font-weight:bold}
-.ar{color:#53647b}
+body{margin:0;font-family:Arial,"Tahoma",sans-serif;background:var(--pale);color:var(--ink);line-height:1.7}
+header{background:var(--navy);color:#fff;text-align:center;padding:24px 14px}
+header h1{font-size:clamp(24px,4vw,34px);margin:0}
+header p{margin:5px 0 0}
+main{max-width:850px;margin:22px auto;padding:0 14px}
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 4px 18px #14284a12}
+h2{font-size:20px;margin:0 0 12px}
+input,select,button{font:inherit}
+input,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;margin:5px 0 10px}
+button{border:0;border-radius:10px;padding:12px 16px;cursor:pointer;font-weight:bold}
+.primary{background:var(--blue);color:white;width:100%}
+.secondary{background:#e8f1fc;color:var(--navy)}
+.result-word{font-size:25px;font-weight:bold;color:var(--navy)}
+.meaning{font-size:20px;margin:4px 0 12px}
+.example{border:1px solid #e5eaf2;border-radius:10px;padding:10px 12px;margin:8px 0}
+.example .de{direction:ltr;text-align:left;font-weight:bold}
+.example .ar{color:#43536b}
+.note{font-size:14px;color:#667085}
+.status{padding:10px;border-radius:10px;margin-top:10px}
+.ok{background:#e7f7ef;color:#116644}.bad{background:#fff0ee;color:#9f2118}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.hidden{display:none}
+footer{text-align:center;color:#667085;padding:10px 15px 25px;font-size:13px}
+.pill{display:inline-block;background:#e8f1fc;color:#173768;border-radius:30px;padding:2px 10px;font-size:13px}
 </style>
 </head>
 <body>
 <header>
-<h1>Deutsch Arabisch 🇩🇪</h1>
-<p>تعلمي الألمانية مع أمثلة وتمارين</p>
+<h1>Deutsch Arabisch DE</h1>
+<p>تعلّمي الألمانية مع أمثلة وتمارين</p>
 </header>
 <main>
 <section class="card">
 <h2>🔎 ابحثي عن كلمة</h2>
-<input id="search" placeholder="اكتبي كلمة ألمانية">
-<button onclick="searchWord()">عرض الكلمة والأمثلة</button>
-<div id="result"></div>
+<input id="search" type="text" placeholder="اكتبي كلمة ألمانية، مثل Haus أو lernen" autocomplete="off">
+<button class="primary" id="searchBtn">عرض الكلمة والأمثلة</button>
+<div id="result" aria-live="polite"></div>
+<p class="note">هذه النسخة تعمل دون اتصال بالإنترنت، وتعرض الكلمات الموجودة في قاموسها فقط.</p>
 </section>
 <section class="card">
 <h2>✍️ اختبري نفسك</h2>
-<p id="question"></p>
-<input id="answer" placeholder="اكتبي الكلمة الناقصة">
-<button onclick="checkAnswer()">تحققي من الإجابة</button>
-<p id="feedback"></p>
-<button class="secondary" onclick="nextQuestion()">سؤال جديد</button>
+<p id="quizQuestion">اضغطي «سؤال جديد» لبدء التمرين.</p>
+<input id="quizAnswer" type="text" placeholder="اكتبي الكلمة الألمانية">
+<div class="row">
+<button class="primary" id="checkBtn">تحققي من الإجابة</button>
+<button class="secondary" id="newQuizBtn">سؤال جديد</button>
+</div>
+<div id="quizStatus" aria-live="polite"></div>
 </section>
 <section class="card">
-<h2>📚 كلمات للتعلّم</h2>
-<div id="buttons"></div>
+<h2>📚 الكلمات الموجودة</h2>
+<p class="note">اختاري كلمة من القائمة لعرض معناها وأمثلتها.</p>
+<select id="wordList"><option value="">اختاري كلمة...</option></select>
+<button class="secondary" id="openSelected">عرض الكلمة</button>
 </section>
 </main>
+<footer>Deutsch Arabisch DE · نسخة تجريبية تعليمية</footer>
 <script>
-const words={
-lernen:{m:"يتعلّم",e:[
-["Ich lerne Deutsch.","أنا أتعلم الألمانية."],
-["Du lernst schnell.","أنت تتعلم بسرعة."],
-["Wir lernen zusammen.","نتعلم معًا."],
-["Sie lernt jeden Tag.","هي تتعلم كل يوم."],
-["Ich lerne neue Wörter.","أتعلم كلمات جديدة."],
-["Er lernt für die Prüfung.","هو يدرس للامتحان."],
-["Die Kinder lernen in der Schule.","الأطفال يتعلمون في المدرسة."],
-["Ich möchte Deutsch lernen.","أريد تعلم الألمانية."],
-["Wir lernen heute zu Hause.","نتعلم اليوم في المنزل."],
-["Lernst du Deutsch?","هل تتعلم الألمانية؟"]]},
-machen:{m:"يفعل / يقوم بـ",e:[
-["Was machst du?","ماذا تفعل؟"],
-["Ich mache meine Hausaufgaben.","أحل واجباتي."],
-["Wir machen eine Pause.","نأخذ استراحة."],
-["Sie macht das Essen.","هي تحضّر الطعام."],
-["Was machen wir heute?","ماذا سنفعل اليوم؟"],
-["Ich mache Sport.","أمارس الرياضة."],
-["Er macht einen Fehler.","هو يرتكب خطأ."],
-["Wir machen einen Spaziergang.","نذهب في نزهة."],
-["Mach bitte die Tür zu.","أغلق الباب من فضلك."],
-["Das macht Spaß.","هذا ممتع."]]},
-gehen:{m:"يذهب",e:[
-["Ich gehe nach Hause.","أذهب إلى المنزل."],
-["Wir gehen zur Schule.","نذهب إلى المدرسة."],
-["Sie geht zur Arbeit.","هي تذهب إلى العمل."],
-["Gehst du einkaufen?","هل تذهب للتسوق؟"],
-["Ich gehe zu Fuß.","أذهب مشيًا."],
-["Er geht spazieren.","هو يتمشى."],
-["Wir gehen ins Kino.","نذهب إلى السينما."],
-["Das Kind geht schlafen.","الطفل يذهب للنوم."],
-["Ich muss jetzt gehen.","يجب أن أذهب الآن."],
-["Wo gehst du hin?","إلى أين تذهب؟"]]},
-kommen:{m:"يأتي",e:[
-["Ich komme aus Syrien.","أنا من سوريا."],
-["Wann kommst du?","متى تأتي؟"],
-["Er kommt heute.","هو يأتي اليوم."],
-["Wir kommen morgen.","نأتي غدًا."],
-["Komm bitte herein.","تفضل بالدخول."],
-["Sie kommt aus Deutschland.","هي من ألمانيا."],
-["Meine Freundin kommt zu Besuch.","صديقتي تأتي للزيارة."],
-["Der Bus kommt gleich.","الحافلة ستأتي حالًا."],
-["Ich komme später zurück.","سأعود لاحقًا."],
-["Woher kommst du?","من أين أنت؟"]]},
-sprechen:{m:"يتكلم",e:[
-["Ich spreche Arabisch.","أتكلم العربية."],
-["Sprichst du Deutsch?","هل تتكلم الألمانية؟"],
-["Sie spricht sehr schnell.","هي تتكلم بسرعة كبيرة."],
-["Wir sprechen miteinander.","نتحدث معًا."],
-["Er spricht mit dem Lehrer.","يتحدث مع المعلم."],
-["Kannst du langsamer sprechen?","هل يمكنك التحدث ببطء أكثر؟"],
-["Ich möchte mit dir sprechen.","أريد التحدث معك."],
-["Wir sprechen über die Arbeit.","نتحدث عن العمل."],
-["Sie spricht drei Sprachen.","هي تتكلم ثلاث لغات."],
-["Bitte sprich deutlicher.","تكلم بوضوح أكثر من فضلك."]]}
-berücksichtigen:{m:"يأخذ بعين الاعتبار",e:[
-["Wir müssen alle Faktoren berücksichtigen.","يجب أن نأخذ جميع العوامل بعين الاعتبار."],
-["Bitte berücksichtigen Sie meine Situation.","يرجى أخذ وضعي بعين الاعتبار."],
-["Wir berücksichtigen deine Meinung.","نأخذ رأيك بعين الاعتبار."],
-["Der Preis berücksichtigt die Qualität.","السعر يأخذ الجودة بعين الاعتبار."],
-["Man muss die Kosten berücksichtigen.","يجب مراعاة التكاليف."],
-["Wir berücksichtigen alle Vorschläge.","نأخذ جميع الاقتراحات بعين الاعتبار."],
-["Die Firma berücksichtigt die Wünsche der Kunden.","الشركة تراعي رغبات الزبائن."],
-["Dabei müssen wir die Zeit berücksichtigen.","يجب أن نراعي الوقت في ذلك."],
-["Ich habe deine Hinweise berücksichtigt.","أخذت ملاحظاتك بعين الاعتبار."],
-["Diese Faktoren sind zu berücksichtigen.","يجب أخذ هذه العوامل بعين الاعتبار."]]},
-gewährleisten:{m:"يضمن",e:[
-["Wir müssen die Sicherheit gewährleisten.","يجب أن نضمن السلامة."],
-["Die Firma gewährleistet die Qualität.","تضمن الشركة الجودة."],
-["Das Gesetz gewährleistet den Schutz.","يضمن القانون الحماية."],
-["Wir gewährleisten einen guten Service.","نضمن خدمة جيدة."],
-["Die Maßnahmen gewährleisten den Erfolg.","تضمن الإجراءات النجاح."],
-["Das System gewährleistet Datenschutz.","يضمن النظام حماية البيانات."],
-["Die Schule gewährleistet gleiche Chancen.","تضمن المدرسة فرصًا متساوية."],
-["Wir wollen faire Bedingungen gewährleisten.","نريد ضمان شروط عادلة."],
-["Der Vertrag gewährleistet klare Regeln.","يضمن العقد قواعد واضحة."],
-["Das kann die Sicherheit nicht gewährleisten.","هذا لا يستطيع ضمان السلامة."]]},
-beeinträchtigen:{m:"يؤثر سلبًا في",e:[
-["Stress kann die Gesundheit beeinträchtigen.","يمكن أن يؤثر التوتر سلبًا في الصحة."],
-["Der Lärm beeinträchtigt meine Konzentration.","تؤثر الضوضاء سلبًا في تركيزي."],
-["Das Wetter beeinträchtigt den Verkehr.","يؤثر الطقس سلبًا في حركة المرور."],
-["Die Krankheit beeinträchtigt seinen Alltag.","يؤثر المرض سلبًا في حياته اليومية."],
-["Schlafmangel beeinträchtigt die Leistung.","قلة النوم تؤثر سلبًا في الأداء."],
-["Das Problem beeinträchtigt unsere Arbeit.","تؤثر المشكلة سلبًا في عملنا."],
-["Die Krise beeinträchtigt die Wirtschaft.","تؤثر الأزمة سلبًا في الاقتصاد."],
-["Das darf die Qualität nicht beeinträchtigen.","يجب ألا يؤثر ذلك سلبًا في الجودة."],
-["Die Verletzung beeinträchtigt seine Bewegung.","تؤثر الإصابة سلبًا في حركته."],
-["Zu viel Stress kann Beziehungen beeinträchtigen.","يمكن أن يؤثر التوتر الزائد سلبًا في العلاقات."]]},
+"use strict";
+const words = {
+  "transparenz": {
+    meaning:"شفافية / وضوح", level:"C1", examples:[
+      ["Transparenz schafft Vertrauen.","الشفافية تبني الثقة."],
+      ["Wir brauchen mehr Transparenz bei den Kosten.","نحتاج إلى شفافية أكبر في التكاليف."],
+      ["Das Unternehmen setzt auf Transparenz.","تعتمد الشركة مبدأ الشفافية."],
+      ["Transparenz ist für eine gute Zusammenarbeit unerlässlich.","الشفافية ضرورية للتعاون الجيد."],
+      ["Die Bürger fordern mehr Transparenz.","يطالب المواطنون بمزيد من الشفافية."],
+      ["Ohne Transparenz entstehen schnell Missverständnisse.","من دون شفافية تنشأ حالات سوء فهم بسرعة."],
+      ["Der Bericht sorgt für Transparenz.","يوفر التقرير الوضوح."],
+      ["Transparenz bei Entscheidungen ist entscheidend.","الشفافية في القرارات أمر حاسم."],
+      ["Wir möchten die Transparenz des Verfahrens verbessern.","نريد تحسين شفافية الإجراءات."],
+      ["Es fehlt an Transparenz bei der Vergabe der Aufträge.","هناك نقص في الشفافية عند إسناد العقود."]
+    ]
+  },
+  "schwankend": {
+    meaning:"متذبذب / غير ثابت", level:"C1", examples:[
+      ["Die Preise sind stark schwankend.","الأسعار متذبذبة بشدة."],
+      ["Seine Leistungen sind schwankend.","أداؤه غير ثابت."],
+      ["Die Nachfrage bleibt schwankend.","يبقى الطلب متذبذبًا."],
+      ["Ihre Stimmung ist momentan schwankend.","مزاجها متقلب حاليًا."],
+      ["Die Qualität war von Woche zu Woche schwankend.","كانت الجودة تتفاوت من أسبوع إلى آخر."],
+      ["Bei schwankenden Temperaturen sollte man vorsichtig sein.","ينبغي الحذر عند تذبذب درجات الحرارة."],
+      ["Die Ergebnisse sind noch schwankend.","النتائج لا تزال غير مستقرة."],
+      ["Der Kurs zeigt schwankende Werte.","يُظهر السعر قيمًا متذبذبة."],
+      ["Seine Konzentration ist im Laufe des Tages schwankend.","يتفاوت تركيزه خلال اليوم."],
+      ["Die Einnahmen sind saisonbedingt schwankend.","الدخل متذبذب بسبب اختلاف المواسم."]
+    ]
+  },
+  "ambivalent": {
+    meaning:"متضارب المشاعر / مزدوج الدلالة", level:"C1", examples:[
+      ["Ich stehe dieser Entscheidung ambivalent gegenüber.","لديّ مشاعر متضاربة تجاه هذا القرار."],
+      ["Sie empfindet ambivalente Gefühle.","تشعر بمشاعر متناقضة."],
+      ["Seine Haltung zu dem Vorschlag bleibt ambivalent.","يظل موقفه من الاقتراح مترددًا ومتناقضًا."],
+      ["Die Reaktionen auf die Reform waren ambivalent.","كانت ردود الفعل على الإصلاح متباينة."],
+      ["Ich bin ambivalent, was einen Umzug betrifft.","أشعر بالتردد تجاه الانتقال إلى منزل آخر."],
+      ["Der Erfolg hatte ambivalente Folgen.","كانت للنجاح نتائج متباينة."],
+      ["Viele Menschen beurteilen die Entwicklung ambivalent.","يقيّم كثير من الناس هذا التطور بصورة متناقضة."],
+      ["Ihre ambivalente Reaktion überraschte uns.","فاجأَتنا ردة فعلها المتضاربة."],
+      ["Das Verhältnis zu seiner Familie ist ambivalent.","علاقته بعائلته تتسم بمشاعر متناقضة."],
+      ["Die Studie kommt zu einem ambivalenten Ergebnis.","تتوصل الدراسة إلى نتيجة ملتبسة."]
+    ]
+  },
+  "prägnant": {
+    meaning:"موجز ودقيق / معبّر", level:"C1", examples:[
+      ["Bitte formulieren Sie Ihre Antwort prägnant.","يرجى صياغة إجابتك بإيجاز ودقة."],
+      ["Sie brachte ihre Kritik prägnant zum Ausdruck.","عبّرت عن انتقادها بوضوح واختصار."],
+      ["Der Bericht fasst die Ergebnisse prägnant zusammen.","يلخّص التقرير النتائج بإيجاز ودقة."],
+      ["Seine Erklärung war kurz und prägnant.","كان شرحه قصيرًا ومعبرًا."],
+      ["Die Überschrift ist prägnant formuliert.","العنوان مصاغ بعبارة موجزة ودقيقة."],
+      ["Ein prägnantes Beispiel verdeutlicht das Problem.","يوضح مثال معبّر المشكلة."],
+      ["Ihre Argumentation ist prägnant und überzeugend.","حجتها موجزة ومقنعة."],
+      ["Der Redner brachte die zentrale Aussage prägnant auf den Punkt.","عبّر المتحدث عن الفكرة الأساسية بدقة واختصار."],
+      ["Bitte vermeiden Sie lange Sätze und formulieren Sie prägnanter.","يرجى تجنب الجمل الطويلة والصياغة بإيجاز أكبر."],
+      ["Die Studie liefert eine prägnante Beschreibung des Phänomens.","تقدم الدراسة وصفًا دقيقًا وموجزًا للظاهرة."]
+    ]
+  },
+  "nachvollziehbar": {
+    meaning:"مفهوم ويمكن تتبّع منطقه", level:"C1", examples:[
+      ["Ihre Entscheidung ist für mich nachvollziehbar.","قرارك مفهوم بالنسبة إليّ."],
+      ["Bitte begründen Sie Ihre Aussage nachvollziehbar.","يرجى تبرير قولك بطريقة واضحة ومنطقية."],
+      ["Die einzelnen Schritte müssen nachvollziehbar sein.","يجب أن تكون الخطوات مفهومة ويمكن تتبعها."],
+      ["Seine Reaktion ist angesichts der Umstände nachvollziehbar.","ردة فعله مفهومة في ضوء الظروف."],
+      ["Der Bericht stellt die Entwicklung nachvollziehbar dar.","يعرض التقرير التطور بصورة واضحة ومنطقية."],
+      ["Die Kostenaufstellung ist transparent und nachvollziehbar.","كشف التكاليف شفاف وواضح."],
+      ["Die Kritik ist teilweise nachvollziehbar.","الانتقاد مفهوم جزئيًا."],
+      ["Bitte dokumentieren Sie den Vorgang nachvollziehbar.","يرجى توثيق الإجراء بطريقة واضحة."],
+      ["Die Argumente sind schlüssig und nachvollziehbar.","الحجج مترابطة ومفهومة."],
+      ["Nicht jede Entscheidung ist für alle nachvollziehbar.","ليس كل قرار مفهومًا للجميع."]
+    ]
+  },
+  "maßgeblich": {
+    meaning:"حاسم / أساسي / مؤثر بصورة رئيسية", level:"C1", examples:[
+      ["Seine Erfahrung war für den Erfolg maßgeblich.","كانت خبرته عاملًا حاسمًا في النجاح."],
+      ["Mehrere Faktoren sind dafür maßgeblich.","هناك عدة عوامل أساسية لذلك."],
+      ["Die Nachfrage ist maßgeblich für die Preisentwicklung.","يؤثر الطلب بصورة رئيسية في تطور الأسعار."],
+      ["Sie war maßgeblich an der Umsetzung beteiligt.","كانت مشاركة بصورة أساسية في التنفيذ."],
+      ["Für die Entscheidung sind die Fakten maßgeblich.","الحقائق هي العامل الحاسم في القرار."],
+      ["Die Studie hat die Diskussion maßgeblich beeinflusst.","أثرت الدراسة بصورة كبيرة في النقاش."],
+      ["Die Frist ist für das weitere Vorgehen maßgeblich.","المهلة عامل أساسي للخطوات التالية."],
+      ["Sein Beitrag war maßgeblich für das Ergebnis.","كانت مساهمته حاسمة في النتيجة."],
+      ["Die gesetzlichen Vorgaben sind maßgeblich.","التعليمات القانونية هي المرجع الأساسي."],
+      ["Die Qualität hängt maßgeblich von der Vorbereitung ab.","تعتمد الجودة بصورة أساسية على التحضير."]
+    ]
+  },
+  "unerlässlich": {
+    meaning:"ضروري ولا غنى عنه", level:"C1", examples:[
+      ["Eine gute Vorbereitung ist unerlässlich.","التحضير الجيد ضروري ولا غنى عنه."],
+      ["Für diese Aufgabe sind genaue Kenntnisse unerlässlich.","المعرفة الدقيقة ضرورية لهذه المهمة."],
+      ["Vertrauen ist für eine Zusammenarbeit unerlässlich.","الثقة ضرورية للتعاون."],
+      ["Es ist unerlässlich, die Frist einzuhalten.","من الضروري الالتزام بالمهلة."],
+      ["Regelmäßige Übung ist für den Fortschritt unerlässlich.","التدريب المنتظم ضروري للتقدم."],
+      ["Eine klare Kommunikation ist unerlässlich.","التواصل الواضح أمر لا غنى عنه."],
+      ["Für die Analyse sind verlässliche Daten unerlässlich.","البيانات الموثوقة ضرورية للتحليل."],
+      ["Es ist unerlässlich, alle Beteiligten zu informieren.","من الضروري إبلاغ جميع المعنيين."],
+      ["Geduld ist beim Sprachenlernen unerlässlich.","الصبر ضروري عند تعلم اللغات."],
+      ["Eine sorgfältige Prüfung ist unerlässlich.","الفحص الدقيق ضروري ولا غنى عنه."]
+    ]
+  },
+  "differenziert": {
+    meaning:"متعمّق / دقيق ويراعي الفروق", level:"C1", examples:[
+      ["Wir müssen das Problem differenziert betrachten.","علينا النظر إلى المشكلة بصورة متعمقة."],
+      ["Sie vertritt eine differenzierte Meinung.","تتبنى رأيًا متوازنًا يراعي التفاصيل."],
+      ["Der Bericht analysiert die Situation differenziert.","يحلل التقرير الوضع بصورة دقيقة ومتعمقة."],
+      ["Eine differenzierte Betrachtung ist notwendig.","النظرة المتعمقة ضرورية."],
+      ["Er reagierte differenziert auf die Kritik.","تفاعل مع الانتقاد بطريقة متوازنة."],
+      ["Die Frage lässt sich nicht pauschal beantworten, sondern muss differenziert betrachtet werden.","لا يمكن الإجابة عن السؤال بصورة عامة، بل يجب دراسته بدقة."],
+      ["Sie kann ihre Argumente differenziert darstellen.","تستطيع عرض حججها بصورة متعمقة."],
+      ["Die Studie zeichnet ein differenziertes Bild der Lage.","ترسم الدراسة صورة دقيقة ومتعددة الجوانب للوضع."],
+      ["Wir benötigen eine differenzierte Analyse.","نحتاج إلى تحليل متعمق."],
+      ["Seine Einschätzung ist sachlich und differenziert.","تقييمه موضوعي ومتوازن."]
+    ]
+  },
+  "ausschlaggebend": {
+    meaning:"حاسم / العامل الفاصل", level:"C1", examples:[
+      ["Die Qualität war für die Auswahl ausschlaggebend.","كانت الجودة العامل الحاسم في الاختيار."],
+      ["Letztlich war der Preis ausschlaggebend.","كان السعر في النهاية العامل الحاسم."],
+      ["Für den Erfolg ist die Zusammenarbeit ausschlaggebend.","التعاون عامل حاسم للنجاح."],
+      ["Nicht die Größe, sondern die Wirkung ist ausschlaggebend.","ليس الحجم، بل التأثير هو العامل الحاسم."],
+      ["Seine langjährige Erfahrung war ausschlaggebend.","كانت خبرته الطويلة حاسمة."],
+      ["Mehrere Kriterien sind für die Bewertung ausschlaggebend.","هناك عدة معايير حاسمة للتقييم."],
+      ["Die Entscheidung fiel aufgrund eines ausschlaggebenden Arguments.","اتُّخذ القرار بسبب حجة حاسمة."],
+      ["Für die Aufnahme ist das Ergebnis ausschlaggebend.","النتيجة هي العامل الحاسم للقبول."],
+      ["Die Verfügbarkeit war ausschlaggebend für unsere Wahl.","كان التوفر عاملًا حاسمًا في اختيارنا."],
+      ["Ein einzelner Fehler sollte nicht ausschlaggebend sein.","لا ينبغي أن يكون خطأ واحد عاملًا حاسمًا."]
+    ]
+  }
+};
 
-function showWord(w){
-const x=words[w];
-if(!x)return;
-document.getElementById("result").innerHTML=
-'<h3 class="word">'+w+'</h3><p>'+x.m+'</p>'+
-x.e.map((a,i)=>'<div class="example"><div class="de">'+(i+1)+'. '+a[0]+'</div><div class="ar">'+a[1]+'</div></div>').join("");
+const searchInput=document.getElementById("search");
+const result=document.getElementById("result");
+function normalize(value){return value.trim().toLocaleLowerCase("de-DE");}
+function showWord(raw){
+  const key=normalize(raw);
+  const item=words[key];
+  if(!key){result.innerHTML='<div class="status bad">اكتبي كلمة ألمانية أولًا.</div>';return;}
+  if(!item){result.innerHTML='<div class="status bad">هذه الكلمة غير موجودة في القاموس الحالي. جرّبي كلمة من القائمة أدناه.</div>';return;}
+  result.innerHTML='<div class="result-word" dir="ltr">'+escapeHtml(raw.trim())+'</div>'+
+    '<div class="meaning">'+escapeHtml(item.meaning)+' <span class="pill">'+item.level+'</span></div>'+
+    '<h3>10 أمثلة مترجمة</h3>'+
+    item.examples.map((ex,i)=>'<div class="example"><div class="de" dir="ltr">'+(i+1)+'. '+escapeHtml(ex[0])+'</div><div class="ar">'+escapeHtml(ex[1])+'</div></div>').join("");
 }
-function searchWord(){
-const w=document.getElementById("search").value.trim().toLowerCase();
-if(words[w])showWord(w);
-else document.getElementById("result").innerHTML=
-"<p>لم أجد الكلمة. جرّبي: lernen, machen, gehen, kommen, sprechen.</p>";
+function escapeHtml(value){return value.replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+document.getElementById("searchBtn").addEventListener("click",()=>showWord(searchInput.value));
+searchInput.addEventListener("keydown",e=>{if(e.key==="Enter")showWord(searchInput.value);});
+const wordList=document.getElementById("wordList");
+Object.keys(words).sort().forEach(key=>{const option=document.createElement("option");option.value=key;option.textContent=key+" — "+words[key].meaning;wordList.appendChild(option);});
+document.getElementById("openSelected").addEventListener("click",()=>{if(wordList.value){searchInput.value=wordList.value;showWord(wordList.value);window.scrollTo({top:0,behavior:"smooth"});}});
+let currentQuiz=null;
+function newQuiz(){
+ const entries=Object.entries(words);
+ currentQuiz=entries[Math.floor(Math.random()*entries.length)];
+ document.getElementById("quizQuestion").textContent="ما الكلمة الألمانية التي تعني: «"+currentQuiz[1].meaning+"»؟";
+ document.getElementById("quizAnswer").value="";
+ document.getElementById("quizStatus").innerHTML="";
 }
-document.getElementById("buttons").innerHTML=
-Object.keys(words).map(w=>'<button class="secondary" onclick="showWord(\''+w+'\')">'+w+' — '+words[w].m+'</button>').join("");
-const questions=[
-{q:"Ich ___ Deutsch.",a:"lerne"},
-{q:"Wir ___ nach Hause.",a:"gehen"},
-{q:"Ich ___ Arabisch.",a:"spreche"},
-{q:"Wann ___ du?",a:"kommst"},
-{q:"Was ___ du?",a:"machst"}
-];
-let qi=0;
-function nextQuestion(){
-qi=Math.floor(Math.random()*questions.length);
-document.getElementById("question").textContent=questions[qi].q;
-document.getElementById("answer").value="";
-document.getElementById("feedback").textContent="";
-}
-function checkAnswer(){
-const a=document.getElementById("answer").value.trim().toLowerCase();
-document.getElementById("feedback").textContent=
-a===questions[qi].a?"✅ إجابة صحيحة!":"❌ حاولي مرة أخرى.";
-}
-nextQuestion();
+document.getElementById("newQuizBtn").addEventListener("click",newQuiz);
+document.getElementById("checkBtn").addEventListener("click",()=>{
+ const answer=normalize(document.getElementById("quizAnswer").value);
+ const status=document.getElementById("quizStatus");
+ if(!currentQuiz){status.innerHTML='<div class="status bad">اضغطي «سؤال جديد» أولًا.</div>';return;}
+ if(answer===currentQuiz[0]) status.innerHTML='<div class="status ok">إجابة صحيحة! أحسنتِ.</div>';
+ else status.innerHTML='<div class="status bad">ليست صحيحة بعد. الإجابة: <b dir="ltr">'+escapeHtml(currentQuiz[0])+'</b></div>';
+});
+newQuiz();
 </script>
 </body>
 </html>
