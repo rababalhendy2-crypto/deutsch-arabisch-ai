@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deutsch Arabisch</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#202b43}
+header{background:#173b68;color:white;padding:25px 18px;border-radius:0 0 22px 22px}
+header h1{margin:0 0 10px;font-size:25px}
+header p{margin:0;line-height:1.8}
+main{padding:18px;max-width:650px;margin:auto}
+.card{background:white;padding:18px;border-radius:16px;margin:15px 0;box-shadow:0 3px 12px #0000000b}
+input,button{font:inherit;border-radius:10px;padding:13px;width:100%;margin-top:10px}
+input{border:1px solid #ccd5e1}
+button{border:0;background:#1767ad;color:white;cursor:pointer}
+.secondary{background:#e6eef8;color:#173b68}
+.example{background:#f1f6fc;padding:13px;border-radius:10px;margin-top:10px;line-height:1.8}
+.small{color:#637087;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+<h1>Deutsch Arabisch 🇩🇪</h1>
+<p>تعلّمي الألمانية خطوة بخطوة<br>كلمات وجمل مع الترجمة العربية</p>
+</header>
+<main>
+<div class="card">
+<h2>🔎 تعلّم كلمة جديدة</h2>
+<p>اكتبي كلمة أو فعلًا بالألمانية</p>
+<input id="word" placeholder="مثلاً: lernen">
+<button onclick="showWord()">اعرض أمثلة</button>
+<div id="result"></div>
+</div>
+<div class="card">
+<h2>📝 تدريب سريع</h2>
+<p id="question">Ich ___ Deutsch. (أتعلم)</p>
+<input id="answer" placeholder="اكتبي الكلمة الناقصة">
+<button onclick="checkAnswer()">تحققي من الإجابة</button>
+<p id="feedback"></p>
+<button class="secondary" onclick="nextQuestion()">سؤال آخر</button>
+</div>
+<p class="small">نسخة تجريبية أولية — يمكن تطويرها لاحقًا.</p>
+</main>
+<script>
+const examples={
+lernen:["Ich lerne Deutsch.|أنا أتعلم الألمانية.","Du lernst schnell.|أنت تتعلم بسرعة.","Wir lernen zusammen.|نحن نتعلم معًا.","Sie lernt jeden Tag.|هي تتعلم كل يوم.","Ich möchte Deutsch lernen.|أريد أن أتعلم الألمانية.","Er lernt neue Wörter.|هو يتعلم كلمات جديدة.","Lernst du Deutsch?|هل تتعلم الألمانية؟","Wir lernen für die Prüfung.|نحن ندرس للامتحان.","Die Kinder lernen in der Schule.|الأطفال يتعلمون في المدرسة.","Man kann immer lernen.|يمكن للإنسان أن يتعلم دائمًا."],
+machen:["Ich mache meine Hausaufgaben.|أحل واجباتي.","Was machst du heute?|ماذا تفعل اليوم؟","Wir machen eine Pause.|نأخذ استراحة.","Sie macht das Frühstück.|هي تحضّر الفطور.","Ich mache Sport.|أمارس الرياضة.","Er macht einen Fehler.|هو يرتكب خطأ.","Mach bitte die Tür zu.|أغلق الباب من فضلك.","Was kann ich machen?|ماذا يمكنني أن أفعل؟","Wir machen einen Spaziergang.|نذهب في نزهة.","Das macht Spaß.|هذا ممتع."]
+};
+function showWord(){
+const w=document.getElementById('word').value.trim().toLowerCase();
+const data=examples[w];
+const result=document.getElementById('result');
+if(!w){result.innerHTML='<p>اكتبي كلمة أولًا.</p>';return}
+if(data){result.innerHTML='<h3>'+w+'</h3>'+data.map((s,i)=>'<div class="example"><b>'+ (i+1)+'. '+s.split('|')[0]+'</b><br>'+s.split('|')[1]+'</div>').join('')}
+else{result.innerHTML='<p>الكلمة غير موجودة في النسخة التجريبية. جرّبي <b>lernen</b> أو <b>machen</b>.</p>'}
+}
+const questions=[["Ich ___ Deutsch.","lerne"],["Du ___ schnell.","lernst"],["Wir ___ zusammen.","lernen"],["Sie ___ jeden Tag.","lernt"]];
+let qi=0;
+function checkAnswer(){
+const a=document.getElementById('answer').value.trim().toLowerCase();
+document.getElementById('feedback').textContent=a===questions[qi][1]?"✅ إجابة صحيحة!":"❌ حاولي مرة أخرى. الإجابة الصحيحة: "+questions[qi][1];
+}
+function nextQuestion(){
+qi=(qi+1)%questions.length;
+document.getElementById('question').textContent=questions[qi][0];
+document.getElementById('answer').value='';
+document.getElementById('feedback').textContent='';
+}
+</script>
+</body>
+</html>
