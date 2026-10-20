@@ -44,7 +44,7 @@ footer{text-align:center;color:#667085;padding:10px 15px 25px;font-size:13px}
 <input id="search" type="text" placeholder="اكتبي كلمة ألمانية، مثل Haus أو lernen" autocomplete="off">
 <button class="primary" id="searchBtn">عرض الكلمة والأمثلة</button>
 <div id="result" aria-live="polite"></div>
-<p class="note">هذه النسخة تعمل دون اتصال بالإنترنت، وتعرض الكلمات الموجودة في قاموسها فقط.</p>
+<p class="note">القاموس المدمج يعمل دون اتصال بالإنترنت. للكلمات غير الموجودة فيه يمكنكِ ربط التطبيق بـ OmniRoute من قسم الإعدادات أدناه.</p>
 </section>
 <section class="card">
 <h2>✍️ اختبري نفسك</h2>
@@ -61,6 +61,15 @@ footer{text-align:center;color:#667085;padding:10px 15px 25px;font-size:13px}
 <p class="note">اختاري كلمة من القائمة لعرض معناها وأمثلتها.</p>
 <select id="wordList"><option value="">اختاري كلمة...</option></select>
 <button class="secondary" id="openSelected">عرض الكلمة</button>
+</section>
+<section class="card">
+<h2>🤖 الذكاء الاصطناعي عبر OmniRoute</h2>
+<p class="note">أدخلي عنوان بوابة OmniRoute (واجهة متوافقة مع OpenAI) ومفتاحها واسم النموذج. تُحفظ الإعدادات في هذا المتصفح فقط.</p>
+<input id="aiBase" type="url" dir="ltr" placeholder="http://localhost:20128/v1">
+<input id="aiKey" type="password" dir="ltr" placeholder="API key" autocomplete="off">
+<input id="aiModel" type="text" dir="ltr" placeholder="اسم النموذج أو الـ combo من لوحة OmniRoute">
+<button class="secondary" id="aiSave">حفظ الإعدادات</button>
+<div id="aiStatus" aria-live="polite"></div>
 </section>
 </main>
 <footer>Deutsch Arabisch DE · نسخة تجريبية تعليمية</footer>
@@ -202,11 +211,54 @@ function showWord(raw){
   const key=normalize(raw);
   const item=words[key];
   if(!key){result.innerHTML='<div class="status bad">اكتبي كلمة ألمانية أولًا.</div>';return;}
-  if(!item){result.innerHTML='<div class="status bad">هذه الكلمة غير موجودة في القاموس الحالي. جرّبي كلمة من القائمة أدناه.</div>';return;}
+  if(!item){
+    if(aiReady()){askAi(raw.trim(),key);return;}
+    result.innerHTML='<div class="status bad">هذه الكلمة غير موجودة في القاموس الحالي. جرّبي كلمة من القائمة أدناه، أو اربطي التطبيق بـ OmniRoute.</div>';return;
+  }
+  renderWord(raw,item);
+}
+function renderWord(raw,item,fromAi){
   result.innerHTML='<div class="result-word" dir="ltr">'+escapeHtml(raw.trim())+'</div>'+
-    '<div class="meaning">'+escapeHtml(item.meaning)+' <span class="pill">'+item.level+'</span></div>'+
-    '<h3>10 أمثلة مترجمة</h3>'+
-    item.examples.map((ex,i)=>'<div class="example"><div class="de" dir="ltr">'+(i+1)+'. '+escapeHtml(ex[0])+'</div><div class="ar">'+escapeHtml(ex[1])+'</div></div>').join("");
+    '<div class="meaning">'+escapeHtml(item.meaning)+' <span class="pill">'+escapeHtml(item.level)+'</span></div>'+
+    '<h3>'+item.examples.length+' أمثلة مترجمة</h3>'+
+    item.examples.map((ex,i)=>'<div class="example"><div class="de" dir="ltr">'+(i+1)+'. '+escapeHtml(ex[0])+'</div><div class="ar">'+escapeHtml(ex[1])+'</div></div>').join("")+
+    (fromAi?'<p class="note">⚠️ هذه النتيجة من الذكاء الاصطناعي عبر OmniRoute، وقد تحتوي على أخطاء.</p>':'');
+}
+const aiFields={base:document.getElementById("aiBase"),key:document.getElementById("aiKey"),model:document.getElementById("aiModel")};
+const aiCache={};
+try{const saved=JSON.parse(localStorage.getItem("omniroute")||"{}");for(const f in aiFields)aiFields[f].value=saved[f]||"";}catch(e){}
+function aiConfig(){return{base:aiFields.base.value.trim().replace(/\/+$/,""),key:aiFields.key.value.trim(),model:aiFields.model.value.trim()};}
+function aiReady(){const c=aiConfig();return !!(c.base&&c.model);}
+document.getElementById("aiSave").addEventListener("click",()=>{
+  const status=document.getElementById("aiStatus");
+  if(!aiReady()){status.innerHTML='<div class="status bad">أدخلي العنوان واسم النموذج على الأقل.</div>';return;}
+  try{localStorage.setItem("omniroute",JSON.stringify(aiConfig()));status.innerHTML='<div class="status ok">تم حفظ الإعدادات.</div>';}
+  catch(e){status.innerHTML='<div class="status bad">تعذّر الحفظ في هذا المتصفح، لكن الإعدادات ستعمل حتى إغلاق الصفحة.</div>';}
+});
+async function askAi(word,key){
+  if(aiCache[key]){renderWord(word,aiCache[key],true);return;}
+  result.innerHTML='<div class="status ok">جارٍ السؤال عبر OmniRoute…</div>';
+  const c=aiConfig();
+  const prompt='German word: "'+word+'". Reply with JSON only, no markdown: {"meaning":"Arabic meaning (short, with synonyms separated by /)","level":"CEFR level A1-C2","examples":[["German sentence","Arabic translation"], ...]} with exactly 10 natural example sentences. If it is not a German word, reply {"error":"not german"}.';
+  try{
+    const headers={"Content-Type":"application/json"};
+    if(c.key)headers.Authorization="Bearer "+c.key;
+    const res=await fetch(c.base+"/chat/completions",{method:"POST",headers,body:JSON.stringify({model:c.model,temperature:0.3,messages:[
+      {role:"system",content:"You are a German teacher for Arabic speakers. Always answer with valid JSON only."},
+      {role:"user",content:prompt}]})});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const data=await res.json();
+    const text=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||"";
+    const json=JSON.parse(text.slice(text.indexOf("{"),text.lastIndexOf("}")+1));
+    if(json.error){result.innerHTML='<div class="status bad">يبدو أن هذه ليست كلمة ألمانية.</div>';return;}
+    const examples=(Array.isArray(json.examples)?json.examples:[]).filter(ex=>Array.isArray(ex)&&ex.length>=2).map(ex=>[String(ex[0]),String(ex[1])]);
+    if(!json.meaning||!examples.length)throw new Error("bad response");
+    const item={meaning:String(json.meaning),level:String(json.level||"?"),examples};
+    aiCache[key]=item;
+    renderWord(word,item,true);
+  }catch(e){
+    result.innerHTML='<div class="status bad">تعذّر الاتصال بـ OmniRoute أو قراءة الرد ('+escapeHtml(String(e.message||e))+'). تأكدي من العنوان والمفتاح واسم النموذج.</div>';
+  }
 }
 function escapeHtml(value){return value.replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
 document.getElementById("searchBtn").addEventListener("click",()=>showWord(searchInput.value));
