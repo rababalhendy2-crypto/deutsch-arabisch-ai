@@ -1,0 +1,12 @@
+{
+  "name": "deutsch-arabisch-ai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-words.mjs",
+    "test": "node scripts/check-words.mjs && node scripts/smoke-test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
